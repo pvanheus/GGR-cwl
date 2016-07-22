@@ -1,12 +1,13 @@
 #!/usr/bin/env cwl-runner
 
-cwlVersion: "cwl:draft-3"
+cwlVersion: "v1.0"
 
 class: CommandLineTool
 
 hints:
   - class: DockerRequirement
-    dockerImageId: 'dukegcb/trimmomatic'
+    #dockerImageId: 'dukegcb/trimmomatic'
+    dockerImageId: 'quay.io/mulled/trimmomatic'
 
 requirements:
   - class: InlineJavascriptRequirement
@@ -17,20 +18,22 @@ inputs:
     type: File
     inputBinding:
       position: 5
-    description: "FASTQ file for input read (read R1 in Paired End mode)"
+    doc: "FASTQ file for input read (read R1 in Paired End mode)"
   - id: input_read2_fastq_file
     type:
       - 'null'
       - File
     inputBinding:
       position: 6
-    description: "FASTQ file for read R2 in Paired End mode"
+    doc: "FASTQ file for read R2 in Paired End mode"
   - id: input_adapters_file
     type: File
-    description: "FASTA file containing adapters, PCR sequences, etc. It is used to search for and remove these sequences in the input FASTQ file(s)"
+    doc: "FASTA file containing adapters, PCR sequences, etc. It is used to search for and remove these sequences in the input FASTQ file(s)"
   - id: illuminaclip
-    type: string
-    description: |
+    type: 
+      - string
+      - 'null'
+    doc: |
         <fastaWithAdaptersEtc>:<seed mismatches>:<palindrome clip threshold>:<simple clip threshold>:<minAdapterLength>:<keepBothReads>
         Find and remove Illumina adapters.
         REQUIRED:
@@ -57,7 +60,7 @@ inputs:
       position: 15
       prefix: "SLIDINGWINDOW:"
       separate: false
-    description: |
+    doc: |
       <windowSize>:<requiredQuality>
       Perform a sliding window trimming, cutting once the average quality within the window falls
       below a threshold. By considering multiple bases, a single poor quality base will not cause the
@@ -70,7 +73,7 @@ inputs:
       position: 15
       prefix: "MAXINFO:"
       separate: false
-    description: |
+    doc: |
       <targetLength>:<strictness>
       Performs an adaptive quality trim, balancing the benefits of retaining longer reads against the
       costs of retaining bases with errors.
@@ -86,7 +89,7 @@ inputs:
       position: 14
       prefix: "LEADING:"
       separate: false
-    description: |
+    doc: |
       <quality>
       Remove low quality bases from the beginning. As long as a base has a value below this
       threshold the base is removed and the next base will be investigated.
@@ -97,7 +100,7 @@ inputs:
       position: 14
       prefix: "TRAILING:"
       separate: false
-    description: |
+    doc: |
       <quality>
       Remove low quality bases from the end. As long as a base has a value below this threshold
       the base is removed and the next base (which as trimmomatic is starting from the 3‟ prime end
@@ -111,7 +114,7 @@ inputs:
       position: 13
       prefix: "CROP:"
       separate: false
-    description: |
+    doc: |
       <length>
       Removes bases regardless of quality from the end of the read, so that the read has maximally
       the specified length after this step has been performed. Steps performed after CROP might of
@@ -123,7 +126,7 @@ inputs:
       position: 13
       prefix: "HEADCROP:"
       separate: false
-    description: |
+    doc: |
       <length>
       Removes the specified number of bases, regardless of quality, from the beginning of the read.
       <length>: The number of bases to keep, from the start of the read.
@@ -133,7 +136,7 @@ inputs:
       position: 100
       prefix: "MINLEN:"
       separate: false
-    description: |
+    doc: |
       <length>
       This module removes reads that fall below the specified minimal length. If required, it should
       normally be after all other processing steps. Reads removed by this step will be counted and
@@ -145,7 +148,7 @@ inputs:
       position: 101
       prefix: "AVGQUAL:"
       separate: false
-    description: |
+    doc: |
       <quality>
       Drop the read if the average quality is below the specified level
       <quality>: Specifies the minimum average quality required to keep a read.
@@ -155,19 +158,19 @@ inputs:
       position: 12
       prefix: "TOPHRED33"
       separate: false
-    description: "This (re)encodes the quality part of the FASTQ file to base 33."
+    doc: "This (re)encodes the quality part of the FASTQ file to base 33."
   - id: tophred64
     type: ['null', boolean]
     inputBinding:
       position: 12
       prefix: "TOPHRED64"
       separate: false
-    description: "This (re)encodes the quality part of the FASTQ file to base 64."
+    doc: "This (re)encodes the quality part of the FASTQ file to base 64."
   - id: java_opts
     type:
       - 'null'
       - string
-    description: "JVM arguments should be a quoted, space separated list (e.g. \"-Xms128m -Xmx512m\")"
+    doc: "JVM arguments should be a quoted, space separated list (e.g. \"-Xms128m -Xmx512m\")"
     inputBinding:
       position: 1
       shellQuote: false
@@ -178,7 +181,7 @@ inputs:
       prefix: "-jar"
   - id: end_mode
     type: string
-    description: |
+    doc: |
       SE|PE
       Single End (SE) or Paired End (PE) mode
     inputBinding:
@@ -186,14 +189,14 @@ inputs:
   - id: nthreads
     type: int
     default: 1
-    description: "Number of threads"
+    doc: "Number of threads"
     inputBinding:
       position: 4
       prefix: "-threads"
   - id: phred
     type: string
     default: "64"
-    description: |
+    doc: |
       "33"|"64"
       -phred33 ("33") or -phred64 ("64") specifies the base quality encoding. Default: -phred64
     inputBinding:
@@ -204,7 +207,7 @@ inputs:
     type:
       - 'null'
       - string
-    description: |
+    doc: |
       <ouptut log file name>
       Specifying a trimlog file creates a log of all read trimmings, indicating the following details:
         the read name
@@ -251,7 +254,7 @@ outputs:
         }
   - id: "#output_log_file"
     type: ['null', File]
-    description: "Trimmomatic Log file."
+    doc: "Trimmomatic Log file."
     outputBinding:
       glob: $(inputs.log_filename)
 
@@ -283,10 +286,15 @@ arguments:
         return null;
       }
     position: 10
-  - valueFrom: $("ILLUMINACLIP:" + inputs.input_adapters_file.path + ":"+ inputs.illuminaclip)
+  - valueFrom: |
+      ${
+        if (inputs.illuminaclip !== null )
+          return "ILLUMINACLIP:" + inputs.input_adapters_file.path + ":"+ inputs.illuminaclip;
+        return null;
+       }
     position: 11
 
-description: |
+doc: |
   Trimmomatic is a fast, multithreaded command line tool that can be used to trim and crop
   Illumina (FASTQ) data as well as to remove adapters. These adapters can pose a real problem
   depending on the library preparation and downstream application.
